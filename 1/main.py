@@ -6,38 +6,20 @@ def main():
         numbers = [int(x) for x in f.readlines()]
 
     # Part 1:
-    # print("Increasing:", count_increasing(numbers))
+    # print(count_increasing(numbers))
 
     # Part 2:
-    windows = sum_sliding_windows(numbers)
-    print("Increasing:", count_increasing(windows))
-
-
-def sum_sliding_windows(numbers: List[int]) -> List[int]:
-    n = len(numbers)
-    sums = []
-
-    for i in range(n):
-        j = i + 3
-        if j > n:
-            break
-        sums.append(sum(numbers[i:j]))
-
-    return sums
+    windows = [sum(numbers[i : i + 3]) for i in range(len(numbers) - 2)]
+    print(count_increasing(windows))
 
 
 def count_increasing(numbers: List[int]) -> int:
-    prev, *tail = numbers
     num_increasing = 0
-
-    print(prev, ": (N/A)")
+    prev, *tail = numbers
     for current in tail:
-        diff = current - prev
-        print(current, ":", diff)
-        if diff > 0:
+        if current > prev:
             num_increasing += 1
         prev = current
-
     return num_increasing
 
 
