@@ -8,7 +8,7 @@ fn main() {
         .map(|l| l.unwrap())
         .collect();
 
-    let (mut h, mut d, mut a) = (0, 0, 0);
+    let (mut horiz, mut depth, mut aim) = (0, 0, 0);
 
     for line in lines {
         let mut parts = line.split(" ");
@@ -16,14 +16,14 @@ fn main() {
         let x: i32 = parts.next().unwrap().parse().unwrap();
         match cmd {
             "forward" => {
-                h += x;
-                d += a * x;
+                horiz += x;
+                depth += aim * x;
             }
-            "down" => a += x,
-            "up" => a -= x,
+            "down" => aim += x,
+            "up" => aim -= x,
             _ => unreachable!(),
         };
     }
 
-    println!("{} * {} = {}", h, d, h * d);
+    println!("{}", horiz * depth);
 }

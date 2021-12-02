@@ -1,8 +1,8 @@
 const std = @import("std");
 
-const stdout = std.io.getStdOut().writer();
-
 pub fn main() !void {
+    const stdout = std.io.getStdOut().writer();
+
     var file = try std.fs.cwd().openFile("input.txt", .{});
     defer file.close();
 
@@ -15,7 +15,7 @@ pub fn main() !void {
 
     // Part 1:
     while (try in_stream.readUntilDelimiterOrEof(&buf, '\n')) |line| {
-        var current = try std.fmt.parseInt(u32, line, 10);
+        const current = try std.fmt.parseInt(u32, line, 10);
         if (current > prev) num_increasing += 1;
         prev = current;
     }

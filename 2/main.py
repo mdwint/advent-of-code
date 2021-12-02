@@ -3,18 +3,18 @@ def main():
         lines = f.readlines()
 
     commands = [(cmd, int(x)) for cmd, x in (line.split() for line in lines)]
-    h, d, a = 0, 0, 0
+    horiz, depth, aim = 0, 0, 0
 
     for cmd, x in commands:
         if cmd == "forward":
-            h += x
-            d += a * x
+            horiz += x
+            depth += aim * x
         elif cmd == "down":
-            a += x
+            aim += x
         elif cmd == "up":
-            a -= x
+            aim -= x
 
-    print(h, "*", d, "=", h * d)
+    print(horiz * depth)
 
 
 if __name__ == "__main__":
