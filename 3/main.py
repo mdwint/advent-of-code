@@ -1,4 +1,3 @@
-import typing
 from collections import Counter
 from typing import Callable, List, Tuple
 
@@ -51,7 +50,7 @@ def co2_crit(rank: Ranking) -> str:
 
 def find_line_matching_bit_criteria(bit_crit: BitCriteria, lines: List[str]) -> str:
     for i in range(len(lines[0])):
-        rank = count_ith_bits(i, lines).most_common(2)
+        rank = count_ith_bits(i, lines)
         bit = bit_crit(rank) if len(rank) == 2 else rank[0][0]
         lines = [line for line in lines if line[i] == bit]
         if len(lines) == 1:
@@ -62,13 +61,12 @@ def find_line_matching_bit_criteria(bit_crit: BitCriteria, lines: List[str]) -> 
 def most_common_bits(lines: List[str]) -> str:
     result = ""
     for i in range(len(lines[0])):
-        c = count_ith_bits(i, lines)
-        result += c.most_common(1)[0][0]
+        result += count_ith_bits(i, lines)[0][0]
     return result
 
 
-def count_ith_bits(i: int, lines: List[str]) -> typing.Counter[str]:
-    return Counter([line[i] for line in lines])
+def count_ith_bits(i: int, lines: List[str]) -> Ranking:
+    return Counter([line[i] for line in lines]).most_common(2)
 
 
 def flip(bits: str) -> str:
