@@ -24,10 +24,10 @@ fn part1(lines: Vec<String>) {
 }
 
 fn part2(lines: Vec<String>) {
-    let oxygen_bin = find_line(oxygen_crit, &lines);
+    let oxygen_bin = find_line(|zeros, ones| if zeros <= ones { '1' } else { '0' }, &lines);
     let oxygen = i32::from_str_radix(&oxygen_bin, 2).unwrap();
 
-    let co2_bin = find_line(co2_crit, &lines);
+    let co2_bin = find_line(|zeros, ones| if zeros <= ones { '0' } else { '1' }, &lines);
     let co2 = i32::from_str_radix(&co2_bin, 2).unwrap();
 
     println!("{}", oxygen * co2);
@@ -35,36 +35,12 @@ fn part2(lines: Vec<String>) {
 
 type BitCriteria = fn(usize, usize) -> char;
 
-fn oxygen_crit(zeros: usize, ones: usize) -> char {
-    if zeros <= ones {
-        '1'
-    } else {
-        '0'
-    }
-}
-
-fn co2_crit(zeros: usize, ones: usize) -> char {
-    if zeros <= ones {
-        '0'
-    } else {
-        '1'
-    }
-}
-
 fn find_line(bit_crit: BitCriteria, lines: &Vec<String>) -> String {
     let mut lines = lines.clone();
 
     for i in 0..lines[0].len() {
         let (zeros, ones) = count_ith_bits(i, &lines);
-
-        let bit = if zeros == 0 {
-            '1'
-        } else if ones == 0 {
-            '0'
-        } else {
-            bit_crit(zeros, ones)
-        };
-
+        let bit = bit_crit(zeros, ones);
         lines.retain(|line| line.chars().nth(i).unwrap() == bit);
         if lines.len() == 1 {
             return lines[0].clone();

@@ -21,33 +21,18 @@ def part1(lines: List[str]):
 
 
 def part2(lines: List[str]):
-    oxygen = int(find_line(oxygen_crit, lines), 2)
-    co2 = int(find_line(co2_crit, lines), 2)
+    oxygen = int(find_line(lambda zeros, ones: "1" if zeros <= ones else "0", lines), 2)
+    co2 = int(find_line(lambda zeros, ones: "0" if zeros <= ones else "1", lines), 2)
     print(oxygen * co2)
 
 
-Ranking = List[Tuple[str, int]]
-BitCriteria = Callable[[Ranking], str]
-
-
-def oxygen_crit(rank: Ranking) -> str:
-    (bit, n), (_, m) = rank
-    if n == m:
-        bit = "1"
-    return bit
-
-
-def co2_crit(rank: Ranking) -> str:
-    (_, n), (bit, m) = rank
-    if n == m:
-        bit = "0"
-    return bit
+BitCriteria = Callable[[int, int], str]
 
 
 def find_line(bit_crit: BitCriteria, lines: List[str]) -> str:
     for i in range(len(lines[0])):
-        rank = count_ith_bits(i, lines)
-        bit = bit_crit(rank) if len(rank) == 2 else rank[0][0]
+        zeros, ones = count_ith_bits(i, lines)
+        bit = bit_crit(zeros, ones)
         lines = [line for line in lines if line[i] == bit]
         if len(lines) == 1:
             return lines[0]
@@ -57,12 +42,14 @@ def find_line(bit_crit: BitCriteria, lines: List[str]) -> str:
 def most_common_bits(lines: List[str]) -> str:
     result = ""
     for i in range(len(lines[0])):
-        result += count_ith_bits(i, lines)[0][0]
+        zeros, ones = count_ith_bits(i, lines)
+        result += "0" if zeros > ones else "1"
     return result
 
 
-def count_ith_bits(i: int, lines: List[str]) -> Ranking:
-    return Counter([line[i] for line in lines]).most_common(2)
+def count_ith_bits(i: int, lines: List[str]) -> Tuple[int, int]:
+    c = Counter([line[i] for line in lines])
+    return c["0"], c["1"]
 
 
 def flip(bits: str) -> str:
