@@ -21,12 +21,8 @@ def part1(lines: List[str]):
 
 
 def part2(lines: List[str]):
-    oxygen_bin = find_line_matching_bit_criteria(oxygen_crit, lines)
-    oxygen = int(oxygen_bin, 2)
-
-    co2_bin = find_line_matching_bit_criteria(co2_crit, lines)
-    co2 = int(co2_bin, 2)
-
+    oxygen = int(find_line(oxygen_crit, lines), 2)
+    co2 = int(find_line(co2_crit, lines), 2)
     print(oxygen * co2)
 
 
@@ -48,7 +44,7 @@ def co2_crit(rank: Ranking) -> str:
     return bit
 
 
-def find_line_matching_bit_criteria(bit_crit: BitCriteria, lines: List[str]) -> str:
+def find_line(bit_crit: BitCriteria, lines: List[str]) -> str:
     for i in range(len(lines[0])):
         rank = count_ith_bits(i, lines)
         bit = bit_crit(rank) if len(rank) == 2 else rank[0][0]
