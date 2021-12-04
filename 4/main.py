@@ -1,6 +1,6 @@
 from collections import Counter
 from dataclasses import dataclass, field
-from typing import Dict, Iterator, List, Tuple
+from typing import Iterator, List, Set, Tuple
 
 
 def main():
@@ -15,7 +15,7 @@ def main():
         for board in list(boards):
             board.try_mark(number)
             if board.is_complete():
-                score = board.calc_score(number)
+                score = board.calc_score() * number
                 print(f"{board}\nScore: {score}\n")
 
                 # Part 1:
@@ -31,7 +31,7 @@ Pos = Tuple[int, int]
 @dataclass
 class Board:
     rows: List[List[int]]
-    marked: Dict[Pos, int] = field(default_factory=dict)
+    marked: Set[Pos] = field(default_factory=set)
 
     def __iter__(self) -> Iterator[Tuple[Pos, int]]:
         return (
@@ -52,7 +52,7 @@ class Board:
     def try_mark(self, number: int):
         for pos, num in self:
             if num == number:
-                self.marked[pos] = num
+                self.marked.add(pos)
                 return
 
     def is_complete(self) -> bool:
@@ -69,9 +69,8 @@ class Board:
 
         return False
 
-    def calc_score(self, final: int) -> int:
-        unmarked = (num for pos, num in self if pos not in self.marked)
-        return sum(unmarked) * final
+    def calc_score(self) -> int:
+        return sum(num for pos, num in self if pos not in self.marked)
 
 
 def parse_boards(lines: List[str]) -> Iterator[Board]:
