@@ -15,8 +15,8 @@ def main():
         for board in list(boards):
             board.try_mark(number)
             if board.is_complete():
-                print(board)
-                print(board.calc_score(number))
+                score = board.calc_score(number)
+                print(f"{board}\nScore: {score}\n")
 
                 # Part 1:
                 # return
@@ -40,6 +40,15 @@ class Board:
             for x, num in enumerate(row)
         )
 
+    def __str__(self):
+        text = ""
+        for y, row in enumerate(self.rows):
+            for x, num in enumerate(row):
+                c = "X" if (y, x) in self.marked else str(num)
+                text += c.rjust(2) + " "
+            text += "\n"
+        return text
+
     def try_mark(self, number: int):
         for pos, num in self:
             if num == number:
@@ -60,9 +69,9 @@ class Board:
 
         return False
 
-    def calc_score(self, number: int) -> int:
+    def calc_score(self, final: int) -> int:
         unmarked = (num for pos, num in self if pos not in self.marked)
-        return sum(unmarked) * number
+        return sum(unmarked) * final
 
 
 def parse_boards(lines: List[str]) -> Iterator[Board]:
