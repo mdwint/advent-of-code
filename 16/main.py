@@ -1,25 +1,7 @@
+import io
 import math
 from dataclasses import dataclass
 from typing import List
-
-hex_to_bin = {
-    "0": "0000",
-    "1": "0001",
-    "2": "0010",
-    "3": "0011",
-    "4": "0100",
-    "5": "0101",
-    "6": "0110",
-    "7": "0111",
-    "8": "1000",
-    "9": "1001",
-    "A": "1010",
-    "B": "1011",
-    "C": "1100",
-    "D": "1101",
-    "E": "1110",
-    "F": "1111",
-}
 
 
 @dataclass
@@ -42,29 +24,18 @@ class EndOfStream(Exception):
     pass
 
 
-@dataclass
-class Stream:
-    bits: str
-    pos: int = 0
-
-    def read(self, length: int) -> str:
-        end = self.pos + length
-        if len(self.bits) <= end:
-            raise EndOfStream()
-        result = self.bits[self.pos : end]
-        self.pos = end
-        return result
+def read_int(s: io.StringIO, size: int, base: int = 2) -> int:
+    return int(s.read(size), base)
 
 
 def parse(msg: str) -> Node:
-    bits = "".join(hex_to_bin[x] for x in msg)
-    s = Stream(bits)
+    s = io.StringIO("".join(bin(int(x, 16))[2:].zfill(4) for x in msg))
     return parse_node(s)
 
 
-def parse_node(s: Stream) -> Node:
-    version = int(s.read(3), 2)
-    type_id = int(s.read(3), 2)
+def parse_node(s: io.StringIO) -> Node:
+    version = read_int(s, 3)
+    type_id = read_int(s, 3)
     node: Node
     if type_id == 4:
         node = parse_literal(s)
@@ -75,26 +46,26 @@ def parse_node(s: Stream) -> Node:
     return node
 
 
-def parse_literal(s: Stream) -> Literal:
+def parse_literal(s: io.StringIO) -> Literal:
     number = ""
     while True:
-        more = int(s.read(1), 2)
+        more = read_int(s, 1)
         number += s.read(4)
         if not more:
             break
     return Literal(0, int(number, 2))
 
 
-def parse_operator(s: Stream) -> Operator:
+def parse_operator(s: io.StringIO) -> Operator:
     children: List[Node] = []
-    length_type_id = int(s.read(1), 2)
+    length_type_id = read_int(s, 1)
     if length_type_id == 0:
-        length = int(s.read(15), 2)
-        end = s.pos + length
-        while s.pos < end:
+        length = read_int(s, 15)
+        end = s.tell() + length
+        while s.tell() < end:
             children.append(parse_node(s))
     else:
-        num_subpackets = int(s.read(11), 2)
+        num_subpackets = read_int(s, 11)
         for _ in range(num_subpackets):
             children.append(parse_node(s))
     return Operator(0, 0, children)
