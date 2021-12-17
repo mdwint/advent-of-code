@@ -1,6 +1,6 @@
-import io
 import math
 from dataclasses import dataclass
+from io import StringIO
 from typing import List
 
 
@@ -20,20 +20,16 @@ class Operator(Node):
     children: List[Node]
 
 
-class EndOfStream(Exception):
-    pass
-
-
-def read_int(s: io.StringIO, size: int, base: int = 2) -> int:
+def read_int(s: StringIO, size: int, base: int = 2) -> int:
     return int(s.read(size), base)
 
 
 def parse(msg: str) -> Node:
-    s = io.StringIO("".join(bin(int(x, 16))[2:].zfill(4) for x in msg))
+    s = StringIO("".join(bin(int(x, 16))[2:].zfill(4) for x in msg))
     return parse_node(s)
 
 
-def parse_node(s: io.StringIO) -> Node:
+def parse_node(s: StringIO) -> Node:
     version = read_int(s, 3)
     type_id = read_int(s, 3)
     node: Node
@@ -46,17 +42,17 @@ def parse_node(s: io.StringIO) -> Node:
     return node
 
 
-def parse_literal(s: io.StringIO) -> Literal:
-    number = ""
+def parse_literal(s: StringIO) -> Literal:
+    bits = ""
     while True:
         more = read_int(s, 1)
-        number += s.read(4)
+        bits += s.read(4)
         if not more:
             break
-    return Literal(0, int(number, 2))
+    return Literal(0, int(bits, 2))
 
 
-def parse_operator(s: io.StringIO) -> Operator:
+def parse_operator(s: StringIO) -> Operator:
     children: List[Node] = []
     length_type_id = read_int(s, 1)
     if length_type_id == 0:
@@ -80,7 +76,6 @@ def version_sum(node: Node) -> int:
 
 def part1(msg: str):
     root = parse(msg)
-    # print(root)
     answer = version_sum(root)
     print("Part 1:", answer)
 
@@ -109,17 +104,14 @@ ops = {
 def calc(node: Node) -> int:
     if isinstance(node, Literal):
         return node.number
-
     if isinstance(node, Operator):
         args = [calc(child) for child in node.children]
         return ops[node.type_id](args)
-
     raise ValueError(node)
 
 
 def part2(msg: str):
     root = parse(msg)
-    # print(root)
     answer = calc(root)
     print("Part 2:", answer)
 
