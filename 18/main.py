@@ -16,7 +16,7 @@ import copy
 import json
 import math
 from dataclasses import dataclass, field
-from typing import Callable, List, Optional, Tuple, cast
+from typing import Callable, List, Optional, Tuple
 
 
 @dataclass
@@ -39,6 +39,28 @@ class Node:
     def is_leaf(self) -> bool:
         return not (self.left or self.right)
 
+    @classmethod
+    def parse(cls, text: str) -> Node:
+        return cls.from_list(json.loads(text))
+
+    @classmethod
+    def from_list(cls, obj) -> Node:
+        if isinstance(obj, int):
+            return cls.leaf(obj)
+        left, right = obj
+        return cls(cls.from_list(left), cls.from_list(right))
+
+    def __repr__(self):
+        name = self.__class__.__name__
+        return f"{name}({self.to_list()})"
+
+    def __add__(self, other: Node) -> Node:
+        # Our methods are not pure, so we need to copy the inputs here to avoid
+        # in-place modifications. Bad!
+        left = copy.deepcopy(self)
+        right = copy.deepcopy(other)
+        return Node(left, right).reduce()
+
     def __eq__(self, other):
         return self.to_list() == other.to_list()
 
@@ -60,47 +82,6 @@ class Node:
         n = Node(left, right)
         n.parent = self.parent
         return n
-
-    @classmethod
-    def parse(cls, text: str) -> Node:
-        num = cls.from_list(json.loads(text))
-        assert isinstance(num, cls)
-        return num
-
-    @classmethod
-    def from_list(cls, obj) -> Node:
-        if isinstance(obj, int):
-            return cls.leaf(obj)
-        x, y = obj
-        return cls(cls.from_list(x), cls.from_list(y))
-
-    def __repr__(self):
-        name = self.__class__.__name__
-        return f"{name}({self.to_list()})"
-
-    def __add__(self, other: Node) -> Node:
-        # Our reduce function is not pure, so we need to copy the inputs here
-        # to avoid in-place modifications. Bad!
-        left = copy.deepcopy(self)
-        right = copy.deepcopy(other)
-        return Node(left, right).reduce()
-
-    def __getitem__(self, i: int) -> Node:
-        if i == 0 and self.left:
-            return self.left
-        if i == 1 and self.right:
-            return self.right
-        raise IndexError(i)
-
-    def __setitem__(self, i: int, n: Node):
-        if i == 0:
-            self.left = n
-        elif i == 1:
-            self.right = n
-        else:
-            raise IndexError(i)
-        if n:
-            n.parent = self
 
     def try_explode(self) -> bool:
         match = self._dfs(lambda n, d: d == 4 and not n.is_leaf)
@@ -127,9 +108,9 @@ class Node:
         while parent:
             if parent.left is not child:
                 node = parent.left
-                while node.right:
-                    node = node.right
-                return node if node.is_leaf else None
+                while node.right:  # type: ignore
+                    node = node.right  # type: ignore
+                return node if node.is_leaf else None  # type: ignore
             child = parent
             parent = parent.parent
         return None
@@ -140,9 +121,9 @@ class Node:
         while parent:
             if parent.right is not child:
                 node = parent.right
-                while node.left:
-                    node = node.left
-                return node if node.is_leaf else None
+                while node.left:  # type: ignore
+                    node = node.left  # type: ignore
+                return node if node.is_leaf else None  # type: ignore
             child = parent
             parent = parent.parent
         return None
@@ -154,8 +135,18 @@ class Node:
 
         to_split, path = match
         i = path[-1]
-        to_split.parent[i] = to_split.split()
+        to_split.parent[i] = to_split.split()  # type: ignore
         return True
+
+    def __setitem__(self, i: int, n: Node):
+        if i == 0:
+            self.left = n
+        elif i == 1:
+            self.right = n
+        else:
+            raise IndexError(i)
+        if n:
+            n.parent = self
 
     def _dfs(self, cond: Condition) -> Optional[Tuple[Node, Path]]:
         def visit(node: Node, depth: int, path: Path):
@@ -172,10 +163,10 @@ class Node:
 
         return visit(self, 0, [])
 
-    def mag(self) -> int:
+    def magnitude(self) -> int:
         if self.is_leaf:
             return self.value
-        return 3 * self.left.mag() + 2 * self.right.mag()
+        return 3 * self.left.magnitude() + 2 * self.right.magnitude()  # type: ignore
 
 
 Condition = Callable[[Node, int], bool]
@@ -189,10 +180,10 @@ def main():
 
     head, *tail = numbers
     total = sum(tail, head)
-    print("Part 1:", total.mag())
+    print("Part 1:", total.magnitude())
 
     max_mag = max(
-        (a + b).mag()
+        (a + b).magnitude()
         for i, a in enumerate(numbers)
         for j, b in enumerate(numbers)
         if i != j
@@ -240,4 +231,4 @@ def test_reduce():
 
 def test_magnitude():
     n = [[[[8, 7], [7, 7]], [[8, 6], [7, 7]]], [[[0, 7], [6, 6]], [8, 7]]]
-    assert Node.from_list(n).mag() == 3488
+    assert Node.from_list(n).magnitude() == 3488
