@@ -29,7 +29,7 @@ def rotation_matrix(axis: int, angle: float) -> np.array:
             [0, 0, 1],
         ]
     else:
-        ValueError(axis)
+        raise ValueError(axis)
     return np.array(m)
 
 
