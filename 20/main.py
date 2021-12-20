@@ -1,53 +1,41 @@
+import itertools
+
+
 def main():
     with open("input.txt") as f:
         lines = f.read().splitlines()
 
     head, _, *lines = lines
-    enhancement = [1 if s == "#" else 0 for s in head]
+    algo = [int(s == "#") for s in head]
     img = {
-        (y, x): 1 if s == "#" else 0
+        (y, x): int(s == "#")
         for y, line in enumerate(lines)
         for x, s in enumerate(line)
     }
     show(img)
 
-    lit = compute(2, img, enhancement)
-    print("Part 1:", lit)
-
-    lit = compute(50, img, enhancement)
-    print("Part 2:", lit)
+    print("Part 1:", compute(img, algo, 2))
+    print("Part 2:", compute(img, algo, 50))
 
 
-def compute(n: int, img: dict, enhancement: dict) -> int:
+def compute(img: dict, algo: dict, n: int) -> int:
     for i in range(n):
-        fill = 0 if not enhancement[0] or i % 2 == 0 else 1
-        img = enhance(img, enhancement, fill)
+        img = enhance(img, algo, fill=algo[0] and i % 2)
         if n <= 2:
             show(img)
     return sum(img.values())
 
 
-def enhance(img: dict, enhancement: dict, fill: int) -> dict:
-    img = img.copy()
-    min_y, min_x = min(img)
-    max_y, max_x = max(img)
-    pad = 1
-    for y in range(min_y - pad, max_y + pad + 1):
-        for x in range(min_x - pad, max_x + pad + 1):
-            if (y, x) not in img:
-                img[(y, x)] = fill
+offsets = list(itertools.product(range(-1, 2), repeat=2))
 
+
+def enhance(img: dict, algo: dict, fill: int, pad: int = 3) -> dict:
+    ymin, _ = min(img)
+    ymax, _ = max(img)
     out = {}
-    for (y, x) in sorted(img):
-        key = ""
-        for j in range(-1, 1 + 1):
-            for i in range(-1, 1 + 1):
-                try:
-                    key += str(img[(y + j, x + i)])
-                except KeyError:
-                    key += str(fill)
-        index = int(key, 2)
-        out[(y, x)] = enhancement[index]
+    for y, x in itertools.product(range(ymin - pad - 1, ymax + pad + 2), repeat=2):
+        key = "".join(str(img.get((y + j, x + i), fill)) for j, i in offsets)
+        out[(y, x)] = algo[int(key, 2)]
     return out
 
 
