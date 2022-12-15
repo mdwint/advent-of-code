@@ -49,14 +49,17 @@ def print_map(r: Report, m: Map, pad: int = 4) -> None:
         print("".join(row))
 
 
-def simulate(r: Report, check_row: int) -> Map:
+def distance(x1: int, y1: int, x2: int, y2: int) -> int:
+    return abs(x1 - x2) + abs(y1 - y2)
+
+
+def simulate_part_1(r: Report, check_row: int) -> Map:
     m: Map = {}
 
     for (sx, sy), (bx, by) in r.sensors_and_beacons:
-        d = abs(sx - bx) + abs(sy - by)
+        d = distance(sx, sy, bx, by)
         y1 = sy - d
         y2 = sy + d
-        # for y in range(y1, y2 + 1):
         if y1 <= check_row <= y2:
             y = check_row
             u = d if y == sy else ((y - y1) if y < sy else (y2 - y))
@@ -72,26 +75,35 @@ def simulate(r: Report, check_row: int) -> Map:
     return m
 
 
+def simulate_part_2(r: Report, bound: int) -> int:
+    dists = {s: distance(*s, *b) for s, b in r.sensors_and_beacons}
+    for (sx, sy), d in dists.items():
+        y1 = max(sy - d, 0)
+        y2 = min(sy + d, bound)
+        for y in range(y1, y2 + 1):
+            # Visit all points just outside the perimeter around this sensor:
+            u = d if y == sy else ((y - y1) if y < sy else (y2 - y))
+            x1 = max(sx - u - 1, 0)
+            x2 = min(sx + u + 1, bound)
+            for x in x1, x2:
+                # Is this point farther from all sensors' distance-to-closest-beacon?
+                if all(distance(*s, x, y) > d for s, d in dists.items()):
+                    return x * 4000000 + y
+    return 0
+
+
 def main():
     # name, check_row, bound = "sample.txt", 10, 20
     name, check_row, bound = "input.txt", 2000000, 4000000
     lines = Path(name).read_text().splitlines()
-
     r = parse_report(lines)
-    m = simulate(r, check_row)
-    print_map(r, m)
 
+    m = simulate_part_1(r, check_row)
+    # print_map(r, m)
     s = sum(char == EXCLUDED for (_, y), char in m.items() if y == check_row)
     print("Part 1:", s)
 
-    # This solution is waaaay too slow... :(
-    for y in range(bound):
-        m = simulate(r, check_row=y)
-        xs = [x for x in range(bound) if (x, y) not in m]
-        if len(xs) == 1:
-            x = xs[0]
-            print("Part 2:", x * 4000000 + y)
-            break
+    print("Part 2:", simulate_part_2(r, bound))
 
 
 if __name__ == "__main__":
