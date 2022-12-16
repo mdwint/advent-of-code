@@ -25,27 +25,31 @@ def parse_scan(lines: list[str]) -> Scan:
     return Scan(flow_rates, tunnels)
 
 
-def simulate_part_1(s: Scan) -> int:
-    @lru_cache(maxsize=None)
-    def step(at: Valve, time_left: int, seen: tuple[Valve, ...]) -> int:
-        if time_left <= 1:
-            return 0
+def simulate(s: Scan, total_time: int, actors: int) -> int:
+    start = Valve("AA")
 
-        if_skip = max(step(dst, time_left - 1, seen) for dst in s.tunnels[at])
+    @lru_cache(maxsize=None)
+    def step(at: Valve, time_left: int, opened: tuple[Valve, ...], others: int) -> int:
+        if time_left <= 1:
+            return step(start, total_time, opened, others - 1) if others else 0
+
+        if_skip = max(step(dst, time_left - 1, opened, others) for dst in s.tunnels[at])
         outcomes = [if_skip]
 
         rate = s.flow_rates[at]
-        if rate and at not in seen:
-            seen = (*seen, at)
-            win = rate * (time_left - 1)
-            if_open = win + max(step(dst, time_left - 2, seen) for dst in s.tunnels[at])
+        if rate and at not in opened:
+            opened = tuple(sorted((*opened, at)))
+            if_open = rate * (time_left - 1) + max(
+                step(dst, time_left - 2, opened, others) for dst in s.tunnels[at]
+            )
             outcomes.append(if_open)
 
         return max(outcomes)
 
-    return step(at=Valve("AA"), time_left=30, seen=())
+    return step(start, total_time, opened=(), others=actors - 1)
 
 
 lines = Path("input.txt").read_text().splitlines()
 s = parse_scan(lines)
-print("Part 1:", simulate_part_1(s))
+print("Part 1:", simulate(s, total_time=30, actors=1))
+print("Part 2:", simulate(s, total_time=26, actors=2))
