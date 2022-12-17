@@ -80,21 +80,24 @@ def blit(y: int, sprite: Img, grid: Img) -> None:
                 bg_row[x] = char
 
 
-def simulate(jets: Iterable[str], total_rocks: int, width: int = 7) -> int:
-    rocks = cycle(ROCKS)
-    jets = cycle(jets)
+def simulate(jets: Iterable[str], total_rocks: int) -> int:
+    rocks_iter = cycle(ROCKS)
+    jets_iter = cycle(enumerate(jets))
+
     grid: Img = []
+    width = 7
+    drop_height = 3
+
     rocks_stopped = 0
     height = 0
-    dy = 3
+    height_skipped = 0
 
-    for _ in range(dy):
-        grid.append(["."] * width)
+    cache: dict[tuple, tuple] = {}
 
     while rocks_stopped < total_rocks:
-        rock = next(rocks)
+        rock = next(rocks_iter)
 
-        for _ in range(height - len(grid) + dy + len(rock)):
+        for _ in range(height - len(grid) + len(rock) + drop_height):
             grid.append(["."] * width)
 
         sprite: Img = [
@@ -102,8 +105,8 @@ def simulate(jets: Iterable[str], total_rocks: int, width: int = 7) -> int:
             for row in reversed(rock)
         ]
 
-        for y in range(height + dy, -1, -1):
-            jet = next(jets)
+        for y in range(height + drop_height, -1, -1):
+            jet_id, jet = next(jets_iter)
             sprite = push(y, jet, sprite, grid)
 
             if DEBUG:
@@ -114,10 +117,26 @@ def simulate(jets: Iterable[str], total_rocks: int, width: int = 7) -> int:
                 blit(y, sprite, grid)
                 rocks_stopped += 1
                 height = max(y + len(rock), height)
+
+                grid_hash = "".join("".join(row) for row in grid[-50:])
+                state = (rock, jet_id, grid_hash)
+                if state in cache:
+                    prev_rocks, prev_height = cache[state]
+
+                    diff_rocks = rocks_stopped - prev_rocks
+                    diff_height = height - prev_height
+                    reps = (total_rocks - rocks_stopped) // diff_rocks
+
+                    rocks_stopped += diff_rocks * reps
+                    height_skipped += diff_height * reps
+                else:
+                    cache[state] = (rocks_stopped, height)
+
                 break
 
-    return height
+    return height + height_skipped
 
 
 jets = list(Path("input.txt").read_text().strip())
 print("Part 1:", simulate(jets, total_rocks=2022))
+print("Part 2:", simulate(jets, total_rocks=1_000_000_000_000))
