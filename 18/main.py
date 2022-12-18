@@ -1,8 +1,6 @@
-import argparse
 from collections import deque
-from pathlib import Path
 
-DEBUG = False
+from aoc import read_input
 
 Pos = tuple[int, int, int]
 
@@ -48,31 +46,19 @@ class FloodFill:
         return False
 
 
-def main() -> None:
-    global DEBUG
-    p = argparse.ArgumentParser()
-    p.add_argument("input", nargs="?", default="input.txt")
-    p.add_argument("-d", "--debug", action="store_true")
-    args = p.parse_args()
-    DEBUG = args.debug
+scan = read_input().splitlines()
+points: set[Pos] = {tuple(int(x) for x in line.split(",")) for line in scan}  # type: ignore
 
-    scan = Path(args.input).read_text().splitlines()
-    points: set[Pos] = {tuple(int(x) for x in line.split(",")) for line in scan}  # type: ignore
+free_area = 0
+exterior_area = 0
+fill = FloodFill(points)
 
-    free_area = 0
-    exterior_area = 0
-    fill = FloodFill(points)
+for pos in points:
+    for other in neighbours(pos):
+        if other not in points:
+            free_area += 1
+            if fill.reaches_exterior(other):
+                exterior_area += 1
 
-    for pos in points:
-        for other in neighbours(pos):
-            if other not in points:
-                free_area += 1
-                if fill.reaches_exterior(other):
-                    exterior_area += 1
-
-    print("Part 1:", free_area)
-    print("Part 2:", exterior_area)
-
-
-if __name__ == "__main__":
-    main()
+print("Part 1:", free_area)
+print("Part 2:", exterior_area)

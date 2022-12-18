@@ -4,7 +4,7 @@ from pathlib import Path
 DEBUG = False
 
 
-def main() -> None:
+def read_input() -> str:
     global DEBUG
     p = argparse.ArgumentParser()
     p.add_argument("input", nargs="?", default="input.txt")
@@ -12,12 +12,4 @@ def main() -> None:
     args = p.parse_args()
     DEBUG = args.debug
 
-    text = Path(args.input).read_text().strip()
-    print(text)
-
-    print("Part 1:", 0)
-    print("Part 2:", 0)
-
-
-if __name__ == "__main__":
-    main()
+    return Path(args.input).read_text().strip()

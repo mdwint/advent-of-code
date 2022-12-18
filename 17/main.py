@@ -1,10 +1,8 @@
-import sys
 from copy import deepcopy
 from itertools import cycle
-from pathlib import Path
 from typing import Iterable
 
-DEBUG = len(sys.argv) > 1
+from aoc import DEBUG, read_input
 
 ROCKS = [
     (("#", "#", "#", "#"),),
@@ -137,6 +135,6 @@ def simulate(jets: Iterable[str], total_rocks: int) -> int:
     return height + height_skipped
 
 
-jets = list(Path("input.txt").read_text().strip())
+jets = list(read_input())
 print("Part 1:", simulate(jets, total_rocks=2022))
 print("Part 2:", simulate(jets, total_rocks=1_000_000_000_000))
