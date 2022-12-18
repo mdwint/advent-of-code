@@ -4,7 +4,7 @@ from pathlib import Path
 DEBUG = False
 
 
-def main():
+def main() -> None:
     global DEBUG
     p = argparse.ArgumentParser()
     p.add_argument("input", nargs="?", default="input.txt")

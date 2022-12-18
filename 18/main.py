@@ -1,36 +1,55 @@
 import argparse
+from collections import deque
 from pathlib import Path
 
 DEBUG = False
 
 Pos = tuple[int, int, int]
+Side = tuple[Pos, Pos]
 
 
-def parse_points(text: str) -> set[Pos]:
-    return {tuple(int(x) for x in line.split(",")) for line in text.splitlines()}  # type: ignore
+def neighbours(pos: Pos) -> list[Pos]:
+    x, y, z = pos
+    deltas = ((-1, 0, 0), (1, 0, 0), (0, -1, 0), (0, 1, 0), (0, 0, -1), (0, 0, 1))
+    return [(x + dx, y + dy, z + dz) for dx, dy, dz in deltas]
 
 
-def count_surface_area(points: set[Pos]) -> int:
-    free_sides: set[tuple[Pos, Pos]] = set()
+def compute_areas(points: set[Pos]) -> tuple[int, int]:
+    free_sides: set[Side] = set()
+    exterior_sides: set[Side] = set()
 
-    for x, y, z in points:
-        for dx, dy, dz in (
-            (-1, 0, 0),
-            (1, 0, 0),
-            (0, -1, 0),
-            (0, 1, 0),
-            (0, 0, -1),
-            (0, 0, 1),
-        ):
-            other = (x + dx, y + dy, z + dz)
+    for pos in points:
+        for other in neighbours(pos):
             if other not in points:
-                side = ((x, y, z), other)
-                free_sides.add(tuple(sorted(side)))  # type: ignore
+                side = (pos, other)
+                free_sides.add(side)
+                if reaches_exterior(other, points):
+                    exterior_sides.add(side)
 
-    return len(free_sides)
+    return len(free_sides), len(exterior_sides)
 
 
-def main():
+def reaches_exterior(start: Pos, points: set[Pos], max_dist: int = 20) -> bool:
+    todo = deque([start])
+    seen = set()
+
+    while todo:
+        pos = todo.popleft()
+        if pos in seen:
+            continue
+        seen.add(pos)
+
+        if any(d >= max_dist for d in pos):
+            return True
+
+        for other in neighbours(pos):
+            if other not in points:
+                todo.append(other)
+
+    return False
+
+
+def main() -> None:
     global DEBUG
     p = argparse.ArgumentParser()
     p.add_argument("input", nargs="?", default="input.txt")
@@ -38,11 +57,12 @@ def main():
     args = p.parse_args()
     DEBUG = args.debug
 
-    text = Path(args.input).read_text().strip()
-    points = parse_points(text)
+    scan = Path(args.input).read_text().splitlines()
+    points: set[Pos] = {tuple(int(x) for x in line.split(",")) for line in scan}  # type: ignore
 
-    print("Part 1:", count_surface_area(points))
-    print("Part 2:", 0)
+    free_area, exterior_area = compute_areas(points)
+    print("Part 1:", free_area)
+    print("Part 2:", exterior_area)
 
 
 if __name__ == "__main__":
