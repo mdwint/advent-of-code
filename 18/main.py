@@ -13,24 +13,39 @@ def neighbours(pos: Pos) -> list[Pos]:
     return [(x + dx, y + dy, z + dz) for dx, dy, dz in deltas]
 
 
-def reaches_exterior(start: Pos, points: set[Pos], max_dist: int = 20) -> bool:
-    todo = deque([start])
-    seen = set()
+class FloodFill:
+    def __init__(self, points: set[Pos]):
+        self.points = points
+        self.exterior_points: set[Pos] = set()
+        self.interior_points: set[Pos] = set()
+        self.max_coord = max(c for pos in points for c in pos)
 
-    while todo:
-        pos = todo.popleft()
-        if pos in seen:
-            continue
-        seen.add(pos)
-
-        if any(d >= max_dist for d in pos):
+    def reaches_exterior(self, start: Pos) -> bool:
+        if start in self.exterior_points:
             return True
 
-        for other in neighbours(pos):
-            if other not in points:
-                todo.append(other)
+        if start in self.interior_points:
+            return False
 
-    return False
+        todo = deque([start])
+        seen = set()
+
+        while todo:
+            pos = todo.popleft()
+            if pos in seen:
+                continue
+            seen.add(pos)
+
+            if any(c > self.max_coord for c in pos):
+                self.exterior_points.update(seen)
+                return True
+
+            for other in neighbours(pos):
+                if other not in self.points:
+                    todo.append(other)
+
+        self.interior_points.update(seen)
+        return False
 
 
 def main() -> None:
@@ -46,12 +61,13 @@ def main() -> None:
 
     free_area = 0
     exterior_area = 0
+    fill = FloodFill(points)
 
     for pos in points:
         for other in neighbours(pos):
             if other not in points:
                 free_area += 1
-                if reaches_exterior(other, points):
+                if fill.reaches_exterior(other):
                     exterior_area += 1
 
     print("Part 1:", free_area)
