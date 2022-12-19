@@ -2,6 +2,7 @@ import sys
 from collections import defaultdict
 from copy import deepcopy
 from functools import lru_cache
+from math import prod
 from pathlib import Path
 
 text = Path(sys.argv[1]).read_text().strip()
@@ -35,12 +36,21 @@ def simulate(bp: Blueprint, total_time: int) -> int:
     def step(time_left: int, robots: Mats, resources: Mats) -> int:
         # print(time_left, robots, resources)
 
+        rob: dict[Mat, int] = defaultdict(int)
+        rob.update(robots)
+
         res: dict[Mat, int] = defaultdict(int)
         res.update(resources)
 
+        # Remove excess robots and resources to improve caching:
+        for mat in ("ore", "clay", "obsidian"):
+            max_cost = max(costs.get(mat, 0) for costs in bp.values())
+            rob[mat] = min(rob[mat], max_cost)
+            res[mat] = min(res[mat], max_cost * time_left)
+
         assert time_left >= 0
         if not time_left:
-            return res.get("geode", 0)
+            return res["geode"]
 
         outcomes = []
 
@@ -57,12 +67,12 @@ def simulate(bp: Blueprint, total_time: int) -> int:
             for typ, costs in bp.items()
             if all(res[mat] >= cost for mat, cost in costs.items())
         ]
+
+        # Prefer building late-stage robots:
         for pref in ("geode", "obsidian"):
             if pref in can_build:
                 can_build = [pref]
-
-        rob: dict[Mat, int] = defaultdict(int)
-        rob.update(robots)
+                break
 
         for typ in can_build:
             _rob = deepcopy(rob)
@@ -85,3 +95,6 @@ def simulate(bp: Blueprint, total_time: int) -> int:
 
 s = sum(simulate(bp, total_time=24) * i for i, bp in enumerate(blueprints, start=1))
 print("Part 1:", s)
+
+s = prod(simulate(bp, total_time=32) for bp in blueprints[:3])
+print("Part 2:", s)
