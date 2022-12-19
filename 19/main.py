@@ -1,18 +1,16 @@
-import sys
 from collections import defaultdict
 from copy import deepcopy
 from functools import lru_cache
 from math import prod
-from pathlib import Path
 
-text = Path(sys.argv[1]).read_text().strip()
+from aoc import DEBUG, read_input
 
 Mat = str
 Costs = dict[Mat, int]
 Blueprint = dict[Mat, Costs]
 
 blueprints: list[Blueprint] = []
-for i, line in enumerate(text.splitlines()):
+for i, line in enumerate(read_input().splitlines()):
     bp = {}
     for sentence in line.split(":")[1].rstrip(".").split(". "):
         prefix, suffix = sentence.split(" costs ")
@@ -34,8 +32,6 @@ def simulate(bp: Blueprint, total_time: int) -> int:
 
     @lru_cache(maxsize=None)
     def step(time_left: int, robots: Mats, resources: Mats) -> int:
-        # print(time_left, robots, resources)
-
         rob: dict[Mat, int] = defaultdict(int)
         rob.update(robots)
 
@@ -48,7 +44,6 @@ def simulate(bp: Blueprint, total_time: int) -> int:
             rob[mat] = min(rob[mat], max_cost)
             res[mat] = min(res[mat], max_cost * time_left)
 
-        assert time_left >= 0
         if not time_left:
             return res["geode"]
 
@@ -89,7 +84,8 @@ def simulate(bp: Blueprint, total_time: int) -> int:
         return max(outcomes)
 
     score = step(total_time, robots=(("ore", 1),), resources=())
-    print(score, bp)
+    if DEBUG:
+        print(score, bp)
     return score
 
 
