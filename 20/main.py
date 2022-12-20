@@ -10,12 +10,12 @@ def mix(numbers: list[int], rounds: int = 1) -> int:
     for _ in range(rounds):
         for i in range(n):
             # Rotate to the i-th item:
-            while q[0][0] != i:
-                q.rotate(-1)
+            dist = next(d for (d, (j, _)) in enumerate(q) if j == i)
+            q.rotate(-dist)
 
             item = q.popleft()
             q.rotate(-item[1])
-            q.appendleft(item)
+            q.append(item)
 
     numbers = [x for _, x in q]
     z = numbers.index(0)
