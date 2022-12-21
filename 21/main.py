@@ -36,15 +36,16 @@ class Solver:
     def __init__(self, graph: Graph):
         self.tasks = {t.id: t for t in graph.tasks}
         self.cache: dict[str, int] = {}
-        self.seen: set[str] = set()
 
     def compute(self, task_id: str = "root") -> int:
-        return self._compute_task(self.tasks[task_id])
+        if task_id in self.cache:
+            return self.cache[task_id]
 
-    def _compute_task(self, task: Task) -> int:
+        task = self.tasks[task_id]
         inputs = [self._resolve(value) for value in task.inputs]
         output = task.op(*inputs)
-        self.cache[task.id] = output
+
+        self.cache[task_id] = output
         return output
 
     def _resolve(self, value: Value) -> int:
@@ -52,13 +53,7 @@ class Solver:
             return value.value
 
         if isinstance(value, OutputValue):
-            tid = value.task_id
-            if tid in self.cache:
-                return self.cache[tid]
-            if tid in self.seen:
-                raise GraphIsCyclic(tid)
-            self.seen.add(tid)
-            return self._compute_task(self.tasks[tid])
+            return self.compute(value.task_id)
 
         raise NotImplementedError(value)
 
@@ -106,14 +101,9 @@ class Solver:
         humn.inputs[0].value = target  # type: ignore
         root.op = lambda a, b: int(a == b)
         self.cache.clear()
-        self.seen.clear()
         assert self.compute(root.id) == 1
 
         return target
-
-
-class GraphIsCyclic(Exception):
-    pass
 
 
 OPS = {
