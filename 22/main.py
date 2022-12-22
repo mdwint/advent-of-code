@@ -14,10 +14,7 @@ Instr = Union[int, str]
 Pos = tuple[int, int]
 Dir = tuple[int, int]
 
-R = (1, 0)
-D = (0, 1)
-L = (-1, 0)
-U = (0, -1)
+DIRS = R, D, L, U = (1, 0), (0, 1), (-1, 0), (0, -1)
 
 
 def parse_notes(text: str) -> tuple[Map, list[Instr]]:
@@ -50,19 +47,10 @@ def parse_notes(text: str) -> tuple[Map, list[Instr]]:
 
 def print_path(map: Map, path: list[tuple[int, int, int, int]]) -> None:
     map = [row.copy() for row in map]
+
+    dirs = {R: ">", D: "v", L: "<", U: "^"}
     for x, y, dx, dy in path:
-        d = dx, dy
-        if d == R:
-            c = ">"
-        elif d == D:
-            c = "v"
-        elif d == L:
-            c = "<"
-        elif d == U:
-            c = "^"
-        else:
-            raise ValueError(d)
-        map[y][x] = c  # type: ignore
+        map[y][x] = dirs[(dx, dy)]  # type: ignore
 
     print("-" * 50)
     for row in map:
@@ -126,57 +114,37 @@ def wrap_cube(x: int, y: int, dx: int, dy: int, w: int, h: int) -> State:
     if 0 <= x < w and 0 <= y < h and map[y][x] != VOID:
         return x, y, dx, dy
 
+    # We crossed an edge, so take a step back:
     x, y = x - dx, y - dy
 
     side = math.gcd(w, h)
     cube = CubeSample if side == 4 else CubeReal
 
-    # Determine old face and direction:
+    # Determine old face, new face, and new direction:
     u, v = x // side, y // side
-    old_face = cube.faces.index((u, v)) + 1
-    old_dir = dx, dy
+    old_face, old_dir = cube.faces.index((u, v)) + 1, (dx, dy)
+    new_face, new_dir = cube.folds[old_face][old_dir]
 
     # Transform coordinates to local (face) space:
     lx = x - (u * side)
     ly = y - (v * side)
 
-    # Determine new face and direction:
-    new_face, new_dir = cube.folds[old_face][old_dir]
-
-    # Update local coordinates:
+    # Transform coordinates to new face:
     old_lx, old_ly = lx, ly
     s = side - 1
     ix = s - lx
     iy = s - ly
     lx, ly = {
-        (D, D): (lx, 0),
-        (D, L): (s, lx),
-        (D, R): (0, lx),
-        (D, U): (ix, s),
-        (L, D): (ly, 0),
-        (L, L): (s, ly),
-        (L, R): (0, iy),
-        (L, U): (iy, s),
-        (R, D): (iy, 0),
-        (R, L): (s, iy),
-        (R, R): (0, ly),
-        (R, U): (ly, s),
-        (U, D): (ix, 0),
-        (U, L): (s, ix),
-        (U, R): (0, lx),
-        (U, U): (lx, s),
-    }[(old_dir, new_dir)]
+        D: {D: (lx, 0), L: (s, lx), R: (0, lx), U: (ix, s)},
+        L: {D: (ly, 0), L: (s, ly), R: (0, iy), U: (iy, s)},
+        R: {D: (iy, 0), L: (s, iy), R: (0, ly), U: (ly, s)},
+        U: {D: (ix, 0), L: (s, ix), R: (0, lx), U: (lx, s)},
+    }[old_dir][new_dir]
 
     if DEBUG:
-        print(
-            old_face,
-            "RDLU"[[R, D, L, U].index(old_dir)],
-            (old_lx, old_ly),
-            "->",
-            new_face,
-            "RDLU"[[R, D, L, U].index(new_dir)],
-            (lx, ly),
-        )
+        old = old_face, "RDLU"[DIRS.index(old_dir)], (old_lx, old_ly)
+        new = new_face, "RDLU"[DIRS.index(new_dir)], (lx, ly)
+        print(*old, "->", *new)
         input(">>> ")
 
     # Transform coordinates to global (flat) space:
@@ -201,9 +169,11 @@ def walk(map: Map, instr: list[Instr], wrap: Wrapping) -> int:
         if move == "L":
             dx, dy = dy, -dx
             path.append((x, y, dx, dy))
+
         elif move == "R":
             dx, dy = -dy, dx
             path.append((x, y, dx, dy))
+
         elif isinstance(move, int):
             for _ in range(move):
                 nx, ny, dx, dy = wrap(x, y, dx, dy, w, h)
@@ -217,7 +187,7 @@ def walk(map: Map, instr: list[Instr], wrap: Wrapping) -> int:
                 if DEBUG:
                     print_path(map, path)
 
-    return 1000 * (y + 1) + 4 * (x + 1) + [R, D, L, U].index((dx, dy))
+    return 1000 * (y + 1) + 4 * (x + 1) + DIRS.index((dx, dy))
 
 
 map, instr = parse_notes(read_input())
