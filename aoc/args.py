@@ -9,4 +9,4 @@ DEBUG = args.debug
 
 
 def read_input() -> str:
-    return Path(args.input).read_text().strip()
+    return Path(args.input).read_text().rstrip()
