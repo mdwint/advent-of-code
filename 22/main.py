@@ -74,7 +74,7 @@ def wrap_flat(x: int, y: int, dx: int, dy: int, w: int, h: int) -> State:
 
 class Cube:
     faces: list[Pos]
-    folds: dict[int, dict[Dir, tuple[int, Dir]]]
+    edges: dict[int, dict[Dir, tuple[int, Dir]]]
 
 
 class CubeSample(Cube):
@@ -82,7 +82,7 @@ class CubeSample(Cube):
     # 234.
     # ..56
     faces = [(2, 0), (0, 1), (1, 1), (2, 1), (2, 2), (3, 2)]
-    folds = {
+    edges = {
         1: {R: (6, L), D: (4, D), L: (3, D), U: (2, D)},
         2: {R: (3, R), D: (5, U), L: (6, U), U: (1, D)},
         3: {R: (4, R), D: (5, R), L: (2, L), U: (1, R)},
@@ -98,7 +98,7 @@ class CubeReal(Cube):
     # 45.
     # 6..
     faces = [(1, 0), (2, 0), (1, 1), (0, 2), (1, 2), (0, 3)]
-    folds = {
+    edges = {
         1: {R: (2, R), D: (3, D), L: (4, R), U: (6, R)},
         2: {R: (5, L), D: (3, L), L: (1, L), U: (6, U)},
         3: {R: (2, U), D: (5, D), L: (4, D), U: (1, U)},
@@ -123,7 +123,7 @@ def wrap_cube(x: int, y: int, dx: int, dy: int, w: int, h: int) -> State:
     # Determine old face, new face, and new direction:
     u, v = x // side, y // side
     old_face, old_dir = cube.faces.index((u, v)) + 1, (dx, dy)
-    new_face, new_dir = cube.folds[old_face][old_dir]
+    new_face, new_dir = cube.edges[old_face][old_dir]
 
     # Transform coordinates to local (face) space:
     lx = x - (u * side)
@@ -152,10 +152,7 @@ def wrap_cube(x: int, y: int, dx: int, dy: int, w: int, h: int) -> State:
     x = lx + (u * side)
     y = ly + (v * side)
 
-    if map[y][x] != WALL:
-        dx, dy = new_dir
-
-    return x, y, dx, dy
+    return x, y, *new_dir
 
 
 def walk(map: Map, instr: list[Instr], wrap: Wrapping) -> int:
@@ -176,12 +173,12 @@ def walk(map: Map, instr: list[Instr], wrap: Wrapping) -> int:
 
         elif isinstance(move, int):
             for _ in range(move):
-                nx, ny, dx, dy = wrap(x, y, dx, dy, w, h)
+                nx, ny, ndx, ndy = wrap(x, y, dx, dy, w, h)
 
                 if map[ny][nx] == WALL:
                     break
 
-                x, y = nx, ny
+                x, y, dx, dy = nx, ny, ndx, ndy
                 path.append((x, y, dx, dy))
 
                 if DEBUG:
