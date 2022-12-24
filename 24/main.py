@@ -1,7 +1,6 @@
 import math
 from collections import defaultdict, deque
-from dataclasses import dataclass
-from functools import lru_cache
+from dataclasses import InitVar, dataclass, field
 
 from aoc import DEBUG, read_input
 
@@ -15,9 +14,29 @@ L, R, U, D, S = (-1, 0), (1, 0), (0, -1), (0, 1), (0, 0)
 class Valley:
     w: int
     h: int
-    bliz: Map
+    bliz: InitVar[Map]
     start: Pos
     end: Pos
+    period: int = field(init=False)
+    blizzards_at: dict[int, Map] = field(init=False)
+
+    def __post_init__(self, bliz: Map):
+        self.period = math.lcm(self.w, self.h)
+        self.blizzards_at = {0: bliz}
+
+        # Precompute blizzards at each time step:
+        dirs = {"<": L, ">": R, "^": U, "v": D}
+        for time in range(1, self.period):
+            new = defaultdict(list)
+            for (x, y), chars in bliz.items():
+                for char in chars:
+                    dx, dy = dirs[char]
+                    x = (x + dx * time) % self.w
+                    y = (y + dy * time) % self.h
+                    new[(x, y)].append(char)
+
+            b = {pos: "".join(sorted(chars)) for pos, chars in new.items()}
+            self.blizzards_at[time] = b
 
     def in_bounds(self, pos: Pos) -> bool:
         x, y = pos
@@ -25,14 +44,14 @@ class Valley:
 
 
 def parse_map(text: str) -> Valley:
-    map = {}
+    bliz = {}
     for y, line in enumerate(text.splitlines()[1:-1]):
         for x, char in enumerate(line[1:-1]):
             if char != ".":
-                map[(x, y)] = char
+                bliz[(x, y)] = char
 
     w, h = x + 1, y + 1
-    return Valley(w, h, map, start=(0, -1), end=(w - 1, h))
+    return Valley(w, h, bliz, start=(0, -1), end=(w - 1, h))
 
 
 def print_map(w: int, h: int, bliz: Map, pos: Pos) -> None:
@@ -47,31 +66,12 @@ def print_map(w: int, h: int, bliz: Map, pos: Pos) -> None:
 
 
 def shortest_path(v: Valley, start: Pos, end: Pos, start_time: int = 0) -> int:
-    period = math.lcm(v.w, v.h)
-
-    @lru_cache(maxsize=None)
-    def blizzards_at(time: int) -> Map:
-        if time == 0:
-            return v.bliz
-
-        dirs = {"<": L, ">": R, "^": U, "v": D}
-
-        new = defaultdict(list)
-        for (x, y), chars in v.bliz.items():
-            for char in chars:
-                dx, dy = dirs[char]
-                x = (x + dx * time) % v.w
-                y = (y + dy * time) % v.h
-                new[(x, y)].append(char)
-
-        return {pos: "".join(sorted(chars)) for pos, chars in new.items()}
-
     todo = deque([(start, start_time)])
     seen = set()
 
     while todo:
         pos, time = todo.popleft()
-        rel_time = time % period
+        rel_time = time % v.period
 
         state = (pos, rel_time)
         if state in seen:
@@ -81,7 +81,7 @@ def shortest_path(v: Valley, start: Pos, end: Pos, start_time: int = 0) -> int:
         if pos == end:
             return time - 1
 
-        bliz = blizzards_at(rel_time)
+        bliz = v.blizzards_at[rel_time]
         if DEBUG:
             print("Minute", time)
             print_map(v.w, v.h, bliz, pos)
