@@ -18,7 +18,6 @@ class Valley:
     bliz: Map
     start: Pos
     end: Pos
-    pos: Pos
 
     def in_bounds(self, pos: Pos) -> bool:
         x, y = pos
@@ -33,25 +32,21 @@ def parse_map(text: str) -> Valley:
                 map[(x, y)] = char
 
     w, h = x + 1, y + 1
-    start, end = (0, -1), (w - 1, h)
-    return Valley(w, h, map, start, end, pos=start)
+    return Valley(w, h, map, start=(0, -1), end=(w - 1, h))
 
 
 def print_map(w: int, h: int, bliz: Map, pos: Pos) -> None:
     for y in range(h):
         for x in range(w):
             p = x, y
-            if p == pos:
-                chars = "E"
-            else:
-                chars = bliz.get(p, ".")
+            chars = "E" if p == pos else bliz.get(p, ".")
             n = len(chars)
             print(chars if n == 1 else n, end="")
         print()
     input()
 
 
-def simulate(v: Valley) -> int:
+def shortest_path(v: Valley, start: Pos, end: Pos, start_time: int = 0) -> int:
     period = math.lcm(v.w, v.h)
 
     @lru_cache(maxsize=None)
@@ -71,7 +66,7 @@ def simulate(v: Valley) -> int:
 
         return {pos: "".join(sorted(chars)) for pos, chars in new.items()}
 
-    todo = deque([(v.pos, 0)])
+    todo = deque([(start, start_time)])
     seen = set()
 
     while todo:
@@ -83,7 +78,7 @@ def simulate(v: Valley) -> int:
             continue
         seen.add(state)
 
-        if pos == v.end:
+        if pos == end:
             return time - 1
 
         bliz = blizzards_at(rel_time)
@@ -100,5 +95,10 @@ def simulate(v: Valley) -> int:
 
 
 v = parse_map(read_input())
-print("Part 1:", simulate(v))
-# print("Part 2:", 0)
+
+t1 = shortest_path(v, v.start, v.end)
+print("Part 1:", t1)
+
+t2 = shortest_path(v, v.end, v.start, t1)
+t3 = shortest_path(v, v.start, v.end, t2)
+print("Part 2:", t3)
