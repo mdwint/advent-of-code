@@ -1,2 +1,5 @@
+.envrc
+.python-version
 __pycache__
+input.txt
 main
