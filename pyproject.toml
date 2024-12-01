@@ -1,19 +1,19 @@
 [tool.poetry]
-name = "aoc-2022"
+name = "aoc"
 version = "0.1.0"
 description = ""
-authors = ["Matteo De Wint <matteo@gorilla.co>"]
+authors = ["Matteo De Wint <matteo@mailfence.com>"]
 readme = "README.md"
 packages = [{include = "aoc"}]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.13"
 
 [tool.poetry.group.dev.dependencies]
-black = "^22.12.0"
-flake8 = "^6.0.0"
-isort = "^5.11.3"
-mypy = "^0.991"
+black = "^24.10.0"
+flake8 = "^7.1.1"
+isort = "^5.13.2"
+mypy = "^1.13.0"
 
 [build-system]
 requires = ["poetry-core"]

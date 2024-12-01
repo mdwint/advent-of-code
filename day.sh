@@ -1,15 +1,17 @@
-#!/bin/sh
+#!/bin/bash
 set -e
-[[ $1 ]] && day=$1 || day=$(date +%d)
 
-d=$(printf "%02d" $day)
-mkdir -p $d
-cd $d
+[[ $1 ]] && day=$1 || day=$(date +%-d)
+year=$(date +%Y)
 
-[ -f main.py ] || cp ../aoc/template.py main.py
+dest=$year/$(printf "%02d" $day)
+mkdir -p $dest
+cd $dest
+
+[ -f main.py ] || cp ../../aoc/template.py main.py
 touch sample.txt
 
-url=https://adventofcode.com/2022/day/$day
+url=https://adventofcode.com/$year/day/$day
 [[ ! -f input.txt && $AOC_SESSION ]] && \
     open $url && curl $url/input --cookie session=$AOC_SESSION -sS > input.txt
 
