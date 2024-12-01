@@ -1,4 +1,3 @@
-# Advent of Code 2021
+# Advent of Code
 
-My solutions to [Advent of Code 2021](https://adventofcode.com/2021). I'll try
-to learn some Rust along the way, and maybe even some Zig.
+My solutions to [Advent of Code](https://adventofcode.com).
